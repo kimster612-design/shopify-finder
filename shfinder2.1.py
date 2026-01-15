@@ -4631,23 +4631,31 @@ async def proxyless_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data[chat_id] = {'proxy_files': [], 'all_proxies': set()}
     stop_flags[chat_id] = False
     
-    # Start proxyless scraping
-    sites = await scrape_sites_proxyless_only(chat_id, context)
-    
-    if not stop_flags.get(chat_id, False):
+    # Run scraping as background task so bot stays responsive
+    async def background_scrape_proxyless():
         try:
-            await send_results(chat_id, context, sites)
+            sites = await scrape_sites_proxyless_only(chat_id, context)
+            if not stop_flags.get(chat_id, False):
+                try:
+                    await send_results(chat_id, context, sites)
+                except Exception as e:
+                    print(f"❌ Error sending results: {e}")
+                    try:
+                        await context.bot.send_message(
+                            chat_id,
+                            f"⚠️ Error sending file, but sites are saved!\n\n"
+                            f"🎯 Found: {len(sites)} sites\n"
+                            f"📁 Check sites.txt file"
+                        )
+                    except:
+                        pass
         except Exception as e:
-            print(f"❌ Error sending results: {e}")
-            try:
-                await context.bot.send_message(
-                    chat_id,
-                    f"⚠️ **Error sending file, but sites are saved!**\n\n"
-                    f"🎯 Found: {len(sites)} sites\n"
-                    f"📁 Check sites.txt file"
-                )
-            except:
-                pass
+            print(f"❌ Background proxyless scrape error: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Start as background task - returns immediately so bot stays responsive
+    asyncio.create_task(background_scrape_proxyless())
 
 
 async def send_results(chat_id, context, sites):
@@ -4844,25 +4852,33 @@ async def done_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💡 /stop for instant results!"
     )
     
-    sites = await scrape_sites(chat_id, context, working)
-    
-    if not stop_flags.get(chat_id, False):
+    # Run scraping as background task so bot stays responsive
+    async def background_scrape():
         try:
-            await send_results(chat_id, context, sites)
+            sites = await scrape_sites(chat_id, context, working)
+            if not stop_flags.get(chat_id, False):
+                try:
+                    await send_results(chat_id, context, sites)
+                except Exception as e:
+                    print(f"❌ Error sending results: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    try:
+                        await context.bot.send_message(
+                            chat_id,
+                            f"⚠️ Error sending results, but sites are saved to sites.txt\n\n🎯 Found: {len(sites)} sites\n📁 Check sites.txt file"
+                        )
+                    except:
+                        pass
         except Exception as e:
-            print(f"❌ Error sending results: {e}")
+            print(f"❌ Background scrape error: {e}")
             import traceback
             traceback.print_exc()
-            # Try to send a message about the error
-            try:
-                await context.bot.send_message(
-                    chat_id,
-                    f"⚠️ **Error sending results, but sites are saved to sites.txt**\n\n🎯 Found: {len(sites)} sites\n📁 Check sites.txt file\n\nError: {str(e)[:200]}"
-                )
-            except:
-                pass
+        finally:
+            user_data[chat_id] = {'proxy_files': [], 'all_proxies': set()}
     
-    user_data[chat_id] = {'proxy_files': [], 'all_proxies': set()}
+    # Start as background task - returns immediately so bot stays responsive
+    asyncio.create_task(background_scrape())
 
 async def stop_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
