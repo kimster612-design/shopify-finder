@@ -62,7 +62,7 @@ except ImportError:
 
 urllib3.disable_warnings()
 
-BOT_TOKEN = "8532582111:AAGwbAkfcGLQBeeeuvW8FOkFkNbpuvykN24"
+BOT_TOKEN = "8373079367:AAFeYUbc0viyVsLu8uP3mJq5uuCB5Tg7VJY"
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121.0.0.0 Safari/537.36",
@@ -5660,3 +5660,4 @@ Examples:
 
 if __name__ == "__main__":
     main()
+
