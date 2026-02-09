@@ -12,6 +12,7 @@ import os
 import tempfile
 import argparse
 import sys
+import json
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -61,7 +62,7 @@ except ImportError:
 
 urllib3.disable_warnings()
 
-BOT_TOKEN = "8338386878:AAFxq1EHysy33ISRY-An9DHfuGAIIDFZaYY"
+BOT_TOKEN = "8532582111:AAGwbAkfcGLQBeeeuvW8FOkFkNbpuvykN24"
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/121.0.0.0 Safari/537.36",
@@ -106,76 +107,25 @@ SEARCH_ENGINES = [
     }
 ]
 
-# Proxyless search engines - CLEANED UP (removed dead/broken ones)
 PROXYLESS_ENGINES = [
-    # Yahoo FIRST - most reliable!
     {
         'name': 'Yahoo',
         'url': 'https://search.yahoo.com/search',
         'param': 'p',
     },
-    # Brave Search - EXCELLENT for Shopify stores
-    {
-        'name': 'Brave',
-        'url': 'https://search.brave.com/search',
-        'param': 'q',
-        'headers': {'Accept-Encoding': 'gzip, deflate'},  # No brotli
-    },
-    # SearX instances - ONLY working ones
-    {
-        'name': 'SearX-1',
-        'url': 'https://searx.be/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-2', 
-        'url': 'https://search.sapti.me/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-3',
-        'url': 'https://searx.tiekoetter.com/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-6',
-        'url': 'https://search.ononoki.org/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-7',
-        'url': 'https://searx.nixnet.services/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-9',
-        'url': 'https://search.mdosch.de/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-13',
-        'url': 'https://priv.au/search',
-        'param': 'q',
-    },
-    {
-        'name': 'SearX-15',
-        'url': 'https://etsi.me/search',
-        'param': 'q',
-    },
-    # Alternative search engines
-    {
-        'name': 'Yandex',
-        'url': 'https://yandex.com/search/',
-        'param': 'text',
-    },
-    {
-        'name': 'Qwant',
-        'url': 'https://www.qwant.com/',
-        'param': 'q',
-    },
 ]
 
-# Mode constants
+TEMPEST_BASE = "https://search-api.global.tempest.com"
+TEMPEST_V1_SEARCH = f"{TEMPEST_BASE}/v1/search/"
+TEMPEST_V2_SEARCH = f"{TEMPEST_BASE}/v2/search/"
+
+IPAD_UA = (
+    "Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) "
+    "AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405"
+)
+
+TEMPEST_WORKERS = 500
+
 MODE_PROXY_ONLY = 'proxy'
 MODE_PROXYLESS = 'proxyless'
 MODE_BOTH = 'both'
@@ -466,102 +416,6 @@ DORKS = [
     'site:myshopify.com potpourri',
     'site:myshopify.com sachet',
     
-    'site:myshopify.com jewelry',
-    'site:myshopify.com jewellery',
-    'site:myshopify.com necklace',
-    'site:myshopify.com pendant',
-    'site:myshopify.com chain',
-    'site:myshopify.com choker',
-    'site:myshopify.com lariat',
-    'site:myshopify.com collar necklace',
-    'site:myshopify.com statement necklace',
-    'site:myshopify.com layered necklace',
-    'site:myshopify.com gold necklace',
-    'site:myshopify.com silver necklace',
-    'site:myshopify.com diamond necklace',
-    'site:myshopify.com pearl necklace',
-    'site:myshopify.com crystal necklace',
-    'site:myshopify.com gemstone necklace',
-    'site:myshopify.com birthstone necklace',
-    'site:myshopify.com initial necklace',
-    'site:myshopify.com name necklace',
-    'site:myshopify.com personalized necklace',
-    'site:myshopify.com custom necklace',
-    'site:myshopify.com earrings',
-    'site:myshopify.com stud earrings',
-    'site:myshopify.com hoop earrings',
-    'site:myshopify.com drop earrings',
-    'site:myshopify.com dangle earrings',
-    'site:myshopify.com chandelier earrings',
-    'site:myshopify.com huggie earrings',
-    'site:myshopify.com ear cuffs',
-    'site:myshopify.com ear climbers',
-    'site:myshopify.com gold earrings',
-    'site:myshopify.com silver earrings',
-    'site:myshopify.com diamond earrings',
-    'site:myshopify.com pearl earrings',
-    'site:myshopify.com crystal earrings',
-    'site:myshopify.com gemstone earrings',
-    'site:myshopify.com clip on earrings',
-    'site:myshopify.com rings',
-    'site:myshopify.com engagement ring',
-    'site:myshopify.com wedding ring',
-    'site:myshopify.com wedding band',
-    'site:myshopify.com promise ring',
-    'site:myshopify.com statement ring',
-    'site:myshopify.com stackable rings',
-    'site:myshopify.com midi rings',
-    'site:myshopify.com pinky ring',
-    'site:myshopify.com cocktail ring',
-    'site:myshopify.com signet ring',
-    'site:myshopify.com gold ring',
-    'site:myshopify.com silver ring',
-    'site:myshopify.com diamond ring',
-    'site:myshopify.com gemstone ring',
-    'site:myshopify.com birthstone ring',
-    'site:myshopify.com initial ring',
-    'site:myshopify.com personalized ring',
-    'site:myshopify.com bracelet',
-    'site:myshopify.com bangle',
-    'site:myshopify.com cuff bracelet',
-    'site:myshopify.com charm bracelet',
-    'site:myshopify.com chain bracelet',
-    'site:myshopify.com beaded bracelet',
-    'site:myshopify.com tennis bracelet',
-    'site:myshopify.com friendship bracelet',
-    'site:myshopify.com leather bracelet',
-    'site:myshopify.com gold bracelet',
-    'site:myshopify.com silver bracelet',
-    'site:myshopify.com anklet',
-    'site:myshopify.com ankle bracelet',
-    'site:myshopify.com brooch',
-    'site:myshopify.com pin',
-    'site:myshopify.com lapel pin',
-    'site:myshopify.com body jewelry',
-    'site:myshopify.com belly ring',
-    'site:myshopify.com nose ring',
-    'site:myshopify.com piercing jewelry',
-    'site:myshopify.com charm',
-    'site:myshopify.com pendant charm',
-    'site:myshopify.com luxury jewelry',
-    'site:myshopify.com fine jewelry',
-    'site:myshopify.com fashion jewelry',
-    'site:myshopify.com costume jewelry',
-    'site:myshopify.com handmade jewelry',
-    'site:myshopify.com artisan jewelry',
-    'site:myshopify.com vintage jewelry',
-    'site:myshopify.com boho jewelry',
-    'site:myshopify.com minimalist jewelry',
-    'site:myshopify.com dainty jewelry',
-    'site:myshopify.com sterling silver',
-    'site:myshopify.com 14k gold',
-    'site:myshopify.com 18k gold',
-    'site:myshopify.com rose gold',
-    'site:myshopify.com white gold',
-    'site:myshopify.com gold plated',
-    'site:myshopify.com gold filled',
-    'site:myshopify.com vermeil',
-    
     'site:myshopify.com accessories',
     'site:myshopify.com bags',
     'site:myshopify.com handbags',
@@ -724,6 +578,36 @@ DORKS = [
     'site:myshopify.com on sale',
     'site:myshopify.com low price',
     'site:myshopify.com low cost',
+    'site:myshopify.com inexpensive',
+    'site:myshopify.com bargain',
+    'site:myshopify.com steal',
+    'site:myshopify.com deal',
+    'site:myshopify.com promo',
+    'site:myshopify.com special offer',
+    'site:myshopify.com markdown',
+    'site:myshopify.com liquidation',
+    'site:myshopify.com outlet',
+    'site:myshopify.com discount store',
+    'site:myshopify.com closeout',
+    'site:myshopify.com overstock',
+    'site:myshopify.com under 50',
+    'site:myshopify.com under 100',
+    'site:myshopify.com value for money',
+    'site:myshopify.com cost effective',
+    'site:myshopify.com affordable quality',
+    'site:myshopify.com entry level',
+    'site:myshopify.com starter',
+    'site:myshopify.com basic',
+    'site:myshopify.com no frills',
+    'site:myshopify.com everyday',
+    'site:myshopify.com practical',
+    'site:myshopify.com functional',
+    'site:myshopify.com utility',
+    'site:myshopify.com multi purpose',
+    'site:myshopify.com all purpose',
+    'site:myshopify.com versatile',
+    'site:myshopify.com handy',
+    'site:myshopify.com convenient',
     'site:myshopify.com economical',
     'site:myshopify.com value',
     'site:myshopify.com budget friendly',
@@ -759,15 +643,6 @@ DORKS = [
     'site:myshopify.com budget candles',
     'site:myshopify.com cheap candles',
     'site:myshopify.com affordable candles',
-    'site:myshopify.com budget jewelry',
-    'site:myshopify.com cheap jewelry',
-    'site:myshopify.com affordable jewelry',
-    'site:myshopify.com costume jewelry',
-    'site:myshopify.com fashion jewelry',
-    'site:myshopify.com cheap necklace',
-    'site:myshopify.com affordable earrings',
-    'site:myshopify.com budget rings',
-    'site:myshopify.com cheap bracelet',
     'site:myshopify.com affordable accessories',
     'site:myshopify.com cheap bags',
     'site:myshopify.com budget handbag',
@@ -3835,6 +3710,72 @@ def search_with_proxy(query, proxy=None, chat_id=None):
     
     return list(all_urls) if all_urls else []
 
+def search_tempest(query, max_results=100):
+
+    seen_domains = set()
+    offset = 0
+    results_per_page = 50
+
+    session = requests.Session()
+    session.verify = False
+
+    while len(urls) < max_results and offset < 200:
+        try:
+            params = {
+                "q": query,
+                "count": str(results_per_page),
+                "offset": str(offset),
+            }
+            headers = {
+                "User-Agent": IPAD_UA,
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept-Encoding": "gzip, deflate, br",
+            }
+
+            r = session.get(
+                TEMPEST_V1_SEARCH,
+                params=params,
+                headers=headers,
+                timeout=30,
+                allow_redirects=True,
+            )
+
+            if r.status_code != 200 or not r.content:
+                break
+
+            data = r.json()
+            web_pages = data.get("webPages", {})
+            results = web_pages.get("value", [])
+
+            if not results:
+                break
+
+            for result in results:
+                url = result.get("url", "")
+                if not url:
+                    continue
+                shopify_found = extract_shopify_urls(url)
+                if shopify_found:
+                    urls.extend(shopify_found)
+                snippet = result.get("snippet", "") + " " + result.get("name", "")
+                shopify_found2 = extract_shopify_urls(snippet)
+                if shopify_found2:
+                    urls.extend(shopify_found2)
+
+            offset += results_per_page
+
+            if offset % 100 == 0:
+                time.sleep(random.uniform(0.5, 1.5))
+            else:
+                time.sleep(random.uniform(0.1, 0.3))
+
+        except Exception:
+            break
+
+    return list(set(urls))
+
+
 def search_proxyless(query, chat_id=None):
     """Search using proxyless engines (SearX instances, Yandex, etc.) with curl_cffi browser impersonation"""
     all_urls = set()
@@ -4385,15 +4326,17 @@ async def scrape_sites_proxyless_only(chat_id, context):
     reset_engine_stats()
     
     engine_stats = {e['name']: 0 for e in PROXYLESS_ENGINES}
+    engine_stats['Tempest'] = 0  # Add Tempest to engine stats
     
     stop_flags[chat_id] = False
     
     msg = await context.bot.send_message(
         chat_id, 
-        f"🚀 **PROXYLESS ULTRA SCRAPER V6.0**\n\n"
-        f"🔍 Search Engines: {len(PROXYLESS_ENGINES)}\n"
+        f"🚀 **PROXYLESS ULTRA SCRAPER V7.0 + TEMPEST**\n\n"
+        f"🔍 Search Engines: {len(PROXYLESS_ENGINES)} + Tempest (Bing)\n"
         f"🎯 Keywords: {len(DORKS)}\n"
-        f"👥 Workers: {len(PROXYLESS_ENGINES) * 3}\n"
+        f"👥 Workers: {len(PROXYLESS_ENGINES) * 2 + TEMPEST_WORKERS}\n"
+        f"🔥 Tempest Workers: {TEMPEST_WORKERS} (iPad UA, JSON API)\n"
         f"⚡ NO PROXIES NEEDED!\n\n"
         f"💪 Starting massive parallel search...",
         parse_mode='Markdown'
@@ -4513,12 +4456,105 @@ async def scrape_sites_proxyless_only(chat_id, context):
         
         return worker_found
     
-    # Create 2 workers per engine (more causes rate limiting!)
+    def tempest_scraper_worker(worker_id):
+        nonlocal searches
+        worker_found = 0
+        consecutive_failures = 0
+
+        session = requests.Session()
+        session.verify = False
+
+        for _ in range(5000):
+            if stop_flags.get(chat_id, False):
+                break
+            if not user_data[chat_id].get('scraping', False):
+                break
+
+            if consecutive_failures >= 30:
+                time.sleep(2)
+                consecutive_failures = 0
+
+            try:
+                query = random.choice(DORKS)
+                offset = random.choice([0, 50, 100])
+
+                params = {
+                    "q": query,
+                    "count": "50",
+                    "offset": str(offset),
+                }
+                headers = {
+                    "User-Agent": IPAD_UA,
+                    "Accept": "application/json",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br",
+                }
+
+                r = session.get(
+                    TEMPEST_V1_SEARCH,
+                    params=params,
+                    headers=headers,
+                    timeout=30,
+                    allow_redirects=True,
+                )
+
+                if r.status_code != 200 or not r.content:
+                    consecutive_failures += 1
+                    with lock:
+                        searches += 1
+                    time.sleep(0.2)
+                    continue
+
+                try:
+                    data = r.json()
+                except Exception:
+                    consecutive_failures += 1
+                    with lock:
+                        searches += 1
+                    continue
+
+                web_pages = data.get("webPages", {})
+                results = web_pages.get("value", [])
+
+                page_urls = set()
+                for result in results:
+                    url = result.get("url", "")
+                    snippet = result.get("snippet", "") + " " + result.get("name", "")
+                    for text in [url, snippet]:
+                        for su in extract_shopify_urls(text):
+                            page_urls.add(su)
+
+                raw_found = extract_shopify_urls(r.text)
+                page_urls.update(raw_found)
+
+                if page_urls:
+                    consecutive_failures = 0
+                    with lock:
+                        searches += 1
+                        engine_stats['Tempest'] = engine_stats.get('Tempest', 0) + len(page_urls)
+                        for url in page_urls:
+                            if url not in found:
+                                found.add(url)
+                                worker_found += 1
+                                print(f"🌐 [Tempest] [{len(found)}] {url}")
+                                save_site_to_file(url)
+                else:
+                    consecutive_failures += 1
+                    with lock:
+                        searches += 1
+
+                time.sleep(random.uniform(0.1, 0.4))
+
+            except Exception:
+                consecutive_failures += 1
+                time.sleep(0.2)
+                continue
+
+        return worker_found
+
     workers_per_engine = 2
-    total_workers = len(PROXYLESS_ENGINES) * workers_per_engine
-    last_milestone_sent = 0  # Track last 1000 milestone sent
-    
-    # Store message info for thread-safe updates
+    total_workers = len(PROXYLESS_ENGINES) * workers_per_engine + TEMPEST_WORKERS
+    last_milestone_sent = 0
     msg_id = msg.message_id
     
     def run_proxyless_scraping():
@@ -4532,6 +4568,8 @@ async def scrape_sites_proxyless_only(chat_id, context):
             for engine in PROXYLESS_ENGINES:
                 for worker_id in range(workers_per_engine):
                     futures.append(executor.submit(proxyless_engine_worker, engine, worker_id))
+            for t_id in range(TEMPEST_WORKERS):
+                futures.append(executor.submit(tempest_scraper_worker, t_id))
             
             while not all(future.done() for future in futures):
                 if stop_flags.get(chat_id, False):
@@ -4660,8 +4698,9 @@ async def proxyless_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     
     await update.message.reply_text(
-        f"🚀 **PROXYLESS MODE ACTIVATED**\n\n"
-        f"🔍 Search Engines: {len(PROXYLESS_ENGINES)}\n"
+        f"🚀 **PROXYLESS MODE ACTIVATED + TEMPEST**\n\n"
+        f"🔍 Search Engines: {len(PROXYLESS_ENGINES)} + Tempest (Bing)\n"
+        f"• 🔥 Tempest API ({TEMPEST_WORKERS} workers, iPad UA)\n"
         f"• Brave (excellent for Shopify)\n"
         f"• 10+ SearX instances\n"
         f"• Yahoo, Ecosia, Yandex\n"
